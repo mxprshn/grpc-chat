@@ -1,0 +1,17 @@
+﻿syntax = "proto3";
+
+option csharp_namespace = "Chat";
+
+import "google/protobuf/timestamp.proto";
+
+package Chat;
+
+service Chat {
+  rpc SendMessage (stream ChatMessage) returns (stream ChatMessage);
+}
+
+message ChatMessage {
+  google.protobuf.Timestamp time = 1;
+  string name = 2;
+  string text = 3;
+}
