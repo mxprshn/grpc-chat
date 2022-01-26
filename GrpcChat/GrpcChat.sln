@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.32002.261
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GrpcChat", "GrpcChat.csproj", "{F32823DF-2375-47DB-BC06-BF17D89BAC7B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F32823DF-2375-47DB-BC06-BF17D89BAC7B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F32823DF-2375-47DB-BC06-BF17D89BAC7B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F32823DF-2375-47DB-BC06-BF17D89BAC7B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F32823DF-2375-47DB-BC06-BF17D89BAC7B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {E72C18F3-89B0-4DC0-A4C8-7C5BFF972FE9}
+	EndGlobalSection
+EndGlobal
