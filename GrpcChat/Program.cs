@@ -2,17 +2,17 @@
 using Grpc.Core;
 using Grpc.Net.Client;
 using GrpcChat;
+using GrpcChat.Handlers;
+using GrpcChat.Interfaces;
 using GrpcChat.Services;
 
-Console.Write("Is server (true/false): ");
-var isServer = bool.Parse(Console.ReadLine());
-int port;
+var inputHandler = new ConsoleInputHandler();
+
+var isServer = inputHandler.HandleIsServerInput();
+var port = inputHandler.HandlePortInput(isServer);
 
 if (isServer)
 {
-    Console.Write("Port to host server: ");
-    port = int.Parse(Console.ReadLine());
-
     var builder = WebApplication.CreateBuilder(args);
     builder.WebHost.ConfigureKestrel(serverOptions =>
     {
@@ -26,6 +26,7 @@ if (isServer)
         logging.ClearProviders();
     });
     builder.Services.AddGrpc();
+    builder.Services.AddSingleton<ISessionHandler>(new SessionHandler());
 
     var app = builder.Build();
     app.UseRouting();
@@ -40,9 +41,6 @@ if (isServer)
 }
 else
 {
-    Console.Write("Server port: ");
-    port = int.Parse(Console.ReadLine());
-
     var httpHandler = new HttpClientHandler();
     httpHandler.ServerCertificateCustomValidationCallback =
         HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
@@ -51,33 +49,40 @@ else
     var client = new Chat.ChatClient(channel);
 
     var name = "Jo";
-    Console.WriteLine("Write messages to send them to server");
+    Console.WriteLine("Connecting...");
 
-    using var streaming = client.SendMessage(new Metadata
-    {
-        new Metadata.Entry("name", name)
-    });
+    using var streaming = client.SendMessage(new Metadata());
 
-    var response = Task.Run(async () =>
+    try
     {
-        while (await streaming.ResponseStream.MoveNext())
+        var response = Task.Run(async () =>
         {
-            Console.WriteLine($"{streaming.ResponseStream.Current.Name}: {streaming.ResponseStream.Current.Text}");
-        }
-    });
-
-    var line = Console.ReadLine();
-    while (!line.Equals("q", StringComparison.OrdinalIgnoreCase))
-    {
-        await streaming.RequestStream.WriteAsync(new ChatMessage
-        {
-            Time = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow),
-            Name = name,
-            Text = line
+            while (await streaming.ResponseStream.MoveNext())
+            {
+                Console.WriteLine($"{streaming.ResponseStream.Current.Name}: {streaming.ResponseStream.Current.Text}");
+            }
         });
 
-        line = Console.ReadLine();
-    }
+        Console.WriteLine("Write messages to send them to server");
+        var line = Console.ReadLine();
+        while (!line.Equals("q", StringComparison.OrdinalIgnoreCase) && !response.IsCompleted)
+        {
+            await streaming.RequestStream.WriteAsync(new ChatMessage
+            {
+                Time = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow),
+                Name = name,
+                Text = line
+            });
 
-    await streaming.RequestStream.CompleteAsync();
+            line = Console.ReadLine();
+        }
+    }
+    catch
+    {
+        Console.WriteLine("Server rejected connection");
+    }
+    finally
+    {
+        await streaming.RequestStream.CompleteAsync();
+    }
 }
