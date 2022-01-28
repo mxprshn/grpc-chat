@@ -12,12 +12,12 @@
         public int HandlePortInput(bool isServer)
         {
             int port;
-            var enterPortPromptString = $"Enter port {(isServer ? "to host server on" : "of server to connect to")}";
+            var enterPortPromptString = $"Enter port {(isServer ? "to host server on" : "of server to connect to")}: ";
 
             string? portInput;
             do
             {
-                Console.WriteLine(enterPortPromptString);
+                Console.Write(enterPortPromptString);
                 portInput = Console.ReadLine();
             } while (!int.TryParse(portInput, out port));
 

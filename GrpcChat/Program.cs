@@ -63,7 +63,7 @@ else
             }
         });
 
-        Console.WriteLine("Write messages to send them to server");
+        Console.WriteLine("Write messages to send them to server. Use 'q' to quit.");
         var line = Console.ReadLine();
         while (!line.Equals("q", StringComparison.OrdinalIgnoreCase) && !response.IsCompleted)
         {
