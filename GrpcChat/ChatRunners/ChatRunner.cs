@@ -90,11 +90,14 @@ namespace GrpcChat.ChatRunners
             }
             catch
             {
-                Console.WriteLine("Server rejected connection");
+                Console.WriteLine("Server rejected connection.");
             }
             finally
             {
                 await streaming.RequestStream.CompleteAsync();
+
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadLine();
             }
         }
 

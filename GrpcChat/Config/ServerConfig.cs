@@ -3,6 +3,5 @@
     public class ServerConfig
     {
         public string Username { get; set; }
-    }
-        
+    } 
 }
