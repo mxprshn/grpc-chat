@@ -8,22 +8,6 @@ public class ChatServerService : Chat.ChatBase
     private string _username;
     private int isSessionActiveValue;
 
-    public bool IsSessionActive
-    {
-        get => Interlocked.CompareExchange(ref isSessionActiveValue, 1, 1) == 1;
-        private set
-        {
-            if (value)
-            {
-                Interlocked.CompareExchange(ref isSessionActiveValue, 1, 0);
-            }
-            else
-            {
-                Interlocked.CompareExchange(ref isSessionActiveValue, 0, 1);
-            }
-        }
-    }
-
     public ChatServerService(ServerConfig serverConfig)
     {
         _username = serverConfig.Username;
@@ -35,34 +19,36 @@ public class ChatServerService : Chat.ChatBase
             IServerStreamWriter<ChatMessage> responseStream,
             ServerCallContext context)
     {
-        if (IsSessionActive)
+        if (Interlocked.CompareExchange(ref isSessionActiveValue, 1, 0) == 1)
         {
             await responseStream.WriteAsync(new ChatMessage { Name = _username, Text = "Server has active session" });
             context.Status = Status.DefaultCancelled;
             return;
         }
 
-        IsSessionActive = true;
-        Console.WriteLine("Client connected, messages are ready to be accepted in console.");
+        Console.WriteLine("New client connected, messages are ready to be accepted in console.");
 
         var clientTask = HandleClientMessage(requestStream, context);
         var serverTask = HandleServerMessage(responseStream, context);
 
         await Task.WhenAll(clientTask, serverTask);
 
-        IsSessionActive = false;
-
+        Interlocked.Exchange(ref isSessionActiveValue, 0);
         Console.WriteLine("Session is closed");
     }
 
     private async Task HandleServerMessage(IServerStreamWriter<ChatMessage> responseStream, ServerCallContext context)
     {
-        while (!context.CancellationToken.IsCancellationRequested && IsSessionActive)
+        string? messageText;
+
+        while (!context.CancellationToken.IsCancellationRequested)
         {
+            messageText = Console.ReadLine();
+
             await responseStream.WriteAsync(new ChatMessage
             {
                 Name = _username,
-                Text = Console.ReadLine(),
+                Text = messageText,
             });
         }
     }
@@ -85,6 +71,7 @@ public class ChatServerService : Chat.ChatBase
             Console.WriteLine($"{message.Name}: {message.Text}");
         }
 
+        Interlocked.Exchange(ref isSessionActiveValue, 0);
         Console.WriteLine("Client disconnected");
     }
 }

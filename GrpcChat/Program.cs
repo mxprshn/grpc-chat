@@ -15,12 +15,9 @@ var chatRunner = ChatRunner
 if (isServer)
 {
     var builder = WebApplication.CreateBuilder(args);
-
     await chatRunner.RunAsServer(builder);
-
     return;
 }
 
 var ip = inputHandler.HandleIpInput();
-
 await chatRunner.RunAsClient(ip);
