@@ -1,0 +1,28 @@
+name: grpc-chat
+
+on:
+  pull_request:
+    branches: [ main, dev ]
+  push:
+    branches: [ 'feature/**' ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    
+    env:
+      SOLUTION_PATH: /home/runner/work/grpc-chat/grpc-chat/GrpcChat/GrpcChat.sln
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore $SOLUTION_PATH
+    - name: Build
+      run: dotnet build --no-restore $SOLUTION_PATH
+    - name: Test
+      run: dotnet test --no-build --verbosity normal $SOLUTION_PATH
