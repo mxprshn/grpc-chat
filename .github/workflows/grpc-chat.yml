@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      SOLUTION_PATH: ./.github/GrpcChat/GrpcChat.sln
+      SOLUTION_PATH: /home/runner/grpc-chat/grpc-chat/GrpcChat/GrpcChat.sln
 
     steps:
     - uses: actions/checkout@v2
