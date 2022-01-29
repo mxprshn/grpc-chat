@@ -1,11 +1,8 @@
 name: grpc-chat
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ 'feature/**' ]
-  workflow_dispatch:
+    branches: [ actions-test ]
 
 jobs:
   build:
