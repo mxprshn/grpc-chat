@@ -66,7 +66,7 @@ namespace GrpcChat.ChatRunners
 
             try
             {
-                var response = Task.Run(async () =>
+                var receiveTask = Task.Run(async () =>
                 {
                     while (await streaming.ResponseStream.MoveNext())
                     {
@@ -74,19 +74,24 @@ namespace GrpcChat.ChatRunners
                     }
                 });
 
-                Console.WriteLine("Write messages to send them to server. Use 'q' to quit.");
-                var line = Console.ReadLine();
-                while (line is not null && !line.Equals("q", StringComparison.OrdinalIgnoreCase) && !response.IsCompleted)
+                var sendTask = Task.Run(async () =>
                 {
-                    await streaming.RequestStream.WriteAsync(new ChatMessage
+                    Console.WriteLine("Write messages to send them to server. Use 'q' to quit.");
+                    var line = Console.ReadLine();
+                    while (line is not null && !line.Equals("q", StringComparison.OrdinalIgnoreCase))
                     {
-                        Time = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow),
-                        Name = _username,
-                        Text = line
-                    });
+                        await streaming.RequestStream.WriteAsync(new ChatMessage
+                        {
+                            Time = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow),
+                            Name = _username,
+                            Text = line
+                        });
 
-                    line = Console.ReadLine();
-                }
+                        line = Console.ReadLine();
+                    }
+                });
+
+                await Task.WhenAny(receiveTask, sendTask).Result;
             }
             catch
             {
