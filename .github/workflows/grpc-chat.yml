@@ -2,7 +2,7 @@ name: grpc-chat
 
 on:
   pull_request:
-    branches: [ actions-test ]
+    branches: [ 'feature/**' ]
 
 jobs:
   build:
