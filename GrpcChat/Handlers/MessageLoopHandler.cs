@@ -4,6 +4,9 @@ using GrpcChat.Interfaces;
 
 namespace GrpcChat.Handlers
 {
+    /// <summary>
+    /// Class implementing logic of client-server message excehnging loops
+    /// </summary>
     public class MessageLoopHandler : IMessageLoopHandler
     {
         private readonly IAsyncStreamReader<ChatMessage> _streamReader;
@@ -47,9 +50,10 @@ namespace GrpcChat.Handlers
             }
         }
 
-        public async Task HandleSendLoop(string username, CancellationToken? token = null)
+        public async Task HandleSendLoop(string? username, CancellationToken? token = null)
         {
             string? messageText;
+            var messageUsername = username ?? "unknown";
 
             if (token.HasValue)
             {
@@ -60,7 +64,7 @@ namespace GrpcChat.Handlers
                     await _streamWriter.WriteAsync(new ChatMessage
                     {
                         Time = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow),
-                        Name = username,
+                        Name = messageUsername,
                         Text = messageText,
                     });
                 }
@@ -74,7 +78,7 @@ namespace GrpcChat.Handlers
                 await _streamWriter.WriteAsync(new ChatMessage
                 {
                     Time = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow),
-                    Name = username,
+                    Name = messageUsername,
                     Text = messageText
                 });
 

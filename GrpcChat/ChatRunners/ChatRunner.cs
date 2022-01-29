@@ -7,6 +7,9 @@ using GrpcChat.Services;
 
 namespace GrpcChat.ChatRunners
 {
+    /// <summary>
+    /// Class to run chat app in either server or client mode
+    /// </summary>
     public class ChatRunner : IChatRunner
     {
         private readonly int _port;
@@ -87,12 +90,15 @@ namespace GrpcChat.ChatRunners
             }
         }
         
-        private class Builder : IChatRunnerBuilder
+        /// <summary>
+        /// Class for creating chat runners
+        /// </summary>
+        private class ChatRunnerBuilder : IChatRunnerBuilder
         {
             private readonly int _port;
             private string? _username;
 
-            public Builder(int port)
+            public ChatRunnerBuilder(int port)
             {
                 _port = port;
             }
@@ -114,6 +120,6 @@ namespace GrpcChat.ChatRunners
             }
         }
 
-        public static IChatRunnerBuilder WithPort(int port) => new Builder(port);
+        public static IChatRunnerBuilder WithPort(int port) => new ChatRunnerBuilder(port);
     }
 }

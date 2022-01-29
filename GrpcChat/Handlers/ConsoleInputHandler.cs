@@ -2,6 +2,9 @@
 
 namespace GrpcChat.Handlers
 {
+    /// <summary>
+    /// Helper class to handle user console input on launch
+    /// </summary>
     public class ConsoleInputHandler
     {
         public string HandleUsernameInput() =>

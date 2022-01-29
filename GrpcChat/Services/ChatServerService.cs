@@ -5,9 +5,12 @@ using GrpcChat.Interfaces;
 
 namespace GrpcChat.Services;
 
+/// <summary>
+/// Service to run chat in server mode
+/// </summary>
 public class ChatServerService : Chat.ChatBase
 {
-    private string _username;
+    private string? _username;
     private int isSessionActiveValue;
 
     public ChatServerService(ServerConfig serverConfig)
