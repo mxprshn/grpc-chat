@@ -9,7 +9,6 @@ public class ChatServerService : Chat.ChatBase
 {
     private string _username;
     private int isSessionActiveValue;
-    private IMessageLoopHandler messageLoopHandler;
 
     public ChatServerService(ServerConfig serverConfig)
     {
@@ -29,13 +28,13 @@ public class ChatServerService : Chat.ChatBase
             return;
         }
 
-        messageLoopHandler = new MessageLoopHandler(streamReader, streamWriter);
+        var messageLoopHandler = new MessageLoopHandler(streamReader, streamWriter);
 
         Console.WriteLine("New client connected, messages are ready to be accepted in console.");
         Console.WriteLine("Send 'q' to stop dialog.");
 
-        var clientTask = HandleClientMessage(context);
-        var serverTask = HandleServerMessage(context);
+        var clientTask = HandleClientMessage(messageLoopHandler, context);
+        var serverTask = messageLoopHandler.HandleSendLoop(_username);
 
         await Task.WhenAll(clientTask, serverTask);
 
@@ -43,12 +42,7 @@ public class ChatServerService : Chat.ChatBase
         Console.WriteLine("Session is closed");
     }
 
-    private async Task HandleServerMessage(ServerCallContext context)
-    {
-        await messageLoopHandler.HandleSendLoop(_username, context.CancellationToken);
-    }
-
-    private async Task HandleClientMessage(ServerCallContext context)
+    private async Task HandleClientMessage(IMessageLoopHandler messageLoopHandler, ServerCallContext context)
     {
         await messageLoopHandler.HandleReceiveLoop(context.CancellationToken);
         
