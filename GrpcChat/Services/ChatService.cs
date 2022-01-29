@@ -1,5 +1,6 @@
 ﻿using Google.Protobuf.WellKnownTypes;
 using Grpc.Core;
+using GrpcChat.Config;
 using GrpcChat.Interfaces;
 
 namespace GrpcChat.Services;
@@ -7,10 +8,12 @@ namespace GrpcChat.Services;
 public class ChatService : Chat.ChatBase
 {
     private readonly ISessionHandler _sessionHandler;
+    private readonly string _username;
 
-    public ChatService(ISessionHandler sessionHandler)
+    public ChatService(ISessionHandler sessionHandler, ServerConfig serverConfig)
     {
         _sessionHandler = sessionHandler;
+        _username = serverConfig.Username;
     }
 
     public override async Task SendMessage(
@@ -20,7 +23,7 @@ public class ChatService : Chat.ChatBase
     {
         if (_sessionHandler.IsSessionActive)
         {
-            await responseStream.WriteAsync(new ChatMessage { Name = "Mick", Text = "Server has active session" });
+            await responseStream.WriteAsync(new ChatMessage { Name = _username, Text = "Server has active session" });
             context.Status = Status.DefaultCancelled;
             return;
         }
@@ -37,13 +40,13 @@ public class ChatService : Chat.ChatBase
         Console.WriteLine("Session is closed");
     }
 
-    private static async Task HandleServerMessage(IServerStreamWriter<ChatMessage> responseStream, ServerCallContext context)
+    private async Task HandleServerMessage(IServerStreamWriter<ChatMessage> responseStream, ServerCallContext context)
     {
         while (!context.CancellationToken.IsCancellationRequested)
         {
             await responseStream.WriteAsync(new ChatMessage
             {
-                Name = "Mick",
+                Name = _username,
                 Text = Console.ReadLine(),
             });
         }

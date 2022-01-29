@@ -8,16 +8,20 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Compile Remove="Runners\**" />
+	  <Content Remove="Runners\**" />
+	  <EmbeddedResource Remove="Runners\**" />
+	  <None Remove="Runners\**" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<Protobuf Include="Protos\chat.proto" GrpcServices="Client, Server" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Grpc.AspNetCore" Version="2.42.0" />
 		<PackageReference Include="Grpc.Net.Client" Version="2.42.0" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Runners\" />
+		<PackageReference Include="Spectre.Console" Version="0.43.0" />
 	</ItemGroup>
 
 </Project>

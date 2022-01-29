@@ -2,12 +2,14 @@
 using Grpc.Core;
 using Grpc.Net.Client;
 using GrpcChat;
+using GrpcChat.Config;
 using GrpcChat.Handlers;
 using GrpcChat.Interfaces;
 using GrpcChat.Services;
 
 var inputHandler = new ConsoleInputHandler();
 
+var username = inputHandler.HandleUsernameInput();
 var isServer = inputHandler.HandleIsServerInput();
 var port = inputHandler.HandlePortInput(isServer);
 
@@ -26,6 +28,9 @@ if (isServer)
         logging.ClearProviders();
     });
     builder.Services.AddGrpc();
+
+    var config = new ServerConfig { Username = username };
+    builder.Services.AddSingleton(config);
     builder.Services.AddSingleton<ISessionHandler>(new SessionHandler());
 
     var app = builder.Build();
@@ -41,14 +46,15 @@ if (isServer)
 }
 else
 {
+    var ip = inputHandler.HandleIpInput();
+
     var httpHandler = new HttpClientHandler();
     httpHandler.ServerCertificateCustomValidationCallback =
         HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-    using var channel = GrpcChannel.ForAddress($"https://localhost:{port}",
+    using var channel = GrpcChannel.ForAddress($"https://{ip}:{port}",
         new GrpcChannelOptions {  HttpHandler = httpHandler });
     var client = new Chat.ChatClient(channel);
 
-    var name = "Jo";
     Console.WriteLine("Connecting...");
 
     using var streaming = client.SendMessage(new Metadata());
@@ -70,7 +76,7 @@ else
             await streaming.RequestStream.WriteAsync(new ChatMessage
             {
                 Time = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow),
-                Name = name,
+                Name = username,
                 Text = line
             });
 

@@ -1,27 +1,19 @@
-﻿namespace GrpcChat.Handlers
+﻿using Spectre.Console;
+
+namespace GrpcChat.Handlers
 {
     public class ConsoleInputHandler
     {
-        public bool HandleIsServerInput()
-        {
-            Console.Write("Enter [y]/[Y] to use server mode: ");
-            var isServerInput = Console.ReadLine();
-            return string.Equals(isServerInput, "y", StringComparison.OrdinalIgnoreCase);
-        }
+        public string HandleUsernameInput() =>
+            AnsiConsole.Ask<string>("What is your name?");
 
-        public int HandlePortInput(bool isServer)
-        {
-            int port;
-            var enterPortPromptString = $"Enter port {(isServer ? "to host server on" : "of server to connect to")}: ";
+        public bool HandleIsServerInput() =>
+            AnsiConsole.Confirm("Run as server?", false);
 
-            string? portInput;
-            do
-            {
-                Console.Write(enterPortPromptString);
-                portInput = Console.ReadLine();
-            } while (!int.TryParse(portInput, out port));
+        public string HandleIpInput() =>
+            AnsiConsole.Ask<string>("Enter IP address of the server:");
 
-            return port;
-        }
+        public int HandlePortInput(bool isServer) =>
+            AnsiConsole.Ask<int>($"Enter port {(isServer ? "to host the server on" : "of the server to connect to")}:");
     }
 }
