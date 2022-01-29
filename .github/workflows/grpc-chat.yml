@@ -3,7 +3,8 @@ name: grpc-chat
 on:
   pull_request:
     branches: [ main, dev ]
-  workflow_dispatch:
+  push:
+    branches: [ 'feature/**' ]
 
 jobs:
   build:
