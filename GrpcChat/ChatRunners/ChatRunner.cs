@@ -1,7 +1,7 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using Grpc.Core;
+﻿using Grpc.Core;
 using Grpc.Net.Client;
 using GrpcChat.Config;
+using GrpcChat.Handlers;
 using GrpcChat.Interfaces;
 using GrpcChat.Services;
 
@@ -63,33 +63,14 @@ namespace GrpcChat.ChatRunners
             Console.WriteLine("Connecting...");
 
             using var streaming = client.SendMessage(new Metadata());
+            var messageLoopHandler = new MessageLoopHandler(streaming.ResponseStream, streaming.RequestStream);
 
             try
             {
-                var receiveTask = Task.Run(async () =>
-                {
-                    while (await streaming.ResponseStream.MoveNext())
-                    {
-                        Console.WriteLine($"{streaming.ResponseStream.Current.Name}: {streaming.ResponseStream.Current.Text}");
-                    }
-                });
+                Console.WriteLine("Write messages to send them to server. Use 'q' to quit.");
 
-                var sendTask = Task.Run(async () =>
-                {
-                    Console.WriteLine("Write messages to send them to server. Use 'q' to quit.");
-                    var line = Console.ReadLine();
-                    while (line is not null && !line.Equals("q", StringComparison.OrdinalIgnoreCase))
-                    {
-                        await streaming.RequestStream.WriteAsync(new ChatMessage
-                        {
-                            Time = Timestamp.FromDateTimeOffset(DateTimeOffset.UtcNow),
-                            Name = _username,
-                            Text = line
-                        });
-
-                        line = Console.ReadLine();
-                    }
-                });
+                var receiveTask = messageLoopHandler.HandleReceiveLoop();
+                var sendTask = messageLoopHandler.HandleSendLoop(_username);
 
                 await Task.WhenAny(receiveTask, sendTask).Result;
             }
@@ -105,7 +86,7 @@ namespace GrpcChat.ChatRunners
                 Console.ReadLine();
             }
         }
-
+        
         private class Builder : IChatRunnerBuilder
         {
             private readonly int _port;

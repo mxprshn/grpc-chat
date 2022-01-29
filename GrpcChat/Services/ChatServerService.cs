@@ -1,5 +1,7 @@
 ﻿using Grpc.Core;
 using GrpcChat.Config;
+using GrpcChat.Handlers;
+using GrpcChat.Interfaces;
 
 namespace GrpcChat.Services;
 
@@ -7,6 +9,7 @@ public class ChatServerService : Chat.ChatBase
 {
     private string _username;
     private int isSessionActiveValue;
+    private IMessageLoopHandler messageLoopHandler;
 
     public ChatServerService(ServerConfig serverConfig)
     {
@@ -15,21 +18,24 @@ public class ChatServerService : Chat.ChatBase
     }
 
     public override async Task SendMessage(
-            IAsyncStreamReader<ChatMessage> requestStream,
-            IServerStreamWriter<ChatMessage> responseStream,
+            IAsyncStreamReader<ChatMessage> streamReader,
+            IServerStreamWriter<ChatMessage> streamWriter,
             ServerCallContext context)
     {
         if (Interlocked.CompareExchange(ref isSessionActiveValue, 1, 0) == 1)
         {
-            await responseStream.WriteAsync(new ChatMessage { Name = _username, Text = "Server has active session" });
+            await streamWriter.WriteAsync(new ChatMessage { Name = _username, Text = "Server has active session" });
             context.Status = Status.DefaultCancelled;
             return;
         }
 
-        Console.WriteLine("New client connected, messages are ready to be accepted in console.");
+        messageLoopHandler = new MessageLoopHandler(streamReader, streamWriter);
 
-        var clientTask = HandleClientMessage(requestStream, context);
-        var serverTask = HandleServerMessage(responseStream, context);
+        Console.WriteLine("New client connected, messages are ready to be accepted in console.");
+        Console.WriteLine("Send 'q' to stop dialog.");
+
+        var clientTask = HandleClientMessage(context);
+        var serverTask = HandleServerMessage(context);
 
         await Task.WhenAll(clientTask, serverTask);
 
@@ -37,40 +43,15 @@ public class ChatServerService : Chat.ChatBase
         Console.WriteLine("Session is closed");
     }
 
-    private async Task HandleServerMessage(IServerStreamWriter<ChatMessage> responseStream, ServerCallContext context)
+    private async Task HandleServerMessage(ServerCallContext context)
     {
-        string? messageText;
-
-        while (!context.CancellationToken.IsCancellationRequested)
-        {
-            messageText = Console.ReadLine();
-
-            await responseStream.WriteAsync(new ChatMessage
-            {
-                Name = _username,
-                Text = messageText,
-            });
-        }
+        await messageLoopHandler.HandleSendLoop(_username, context.CancellationToken);
     }
 
-    private async Task HandleClientMessage(IAsyncStreamReader<ChatMessage> requestStream, ServerCallContext context)
+    private async Task HandleClientMessage(ServerCallContext context)
     {
-        var cancelSource = new TaskCompletionSource<bool>();
-        context.CancellationToken.Register(() => cancelSource.SetResult(false));
-
-        var messageAvailable = async () =>
-        {
-            var requestTask = requestStream.MoveNext(CancellationToken.None);
-            var completed = await Task.WhenAny(cancelSource.Task, requestTask);
-            return completed.Result;
-        };
-
-        while (await messageAvailable())
-        {
-            var message = requestStream.Current;
-            Console.WriteLine($"{message.Name}: {message.Text}");
-        }
-
+        await messageLoopHandler.HandleReceiveLoop(context.CancellationToken);
+        
         Interlocked.Exchange(ref isSessionActiveValue, 0);
         Console.WriteLine("Client disconnected");
     }
