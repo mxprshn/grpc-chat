@@ -1,19 +1,33 @@
-﻿using Google.Protobuf.WellKnownTypes;
-using Grpc.Core;
+﻿using Grpc.Core;
 using GrpcChat.Config;
-using GrpcChat.Interfaces;
 
 namespace GrpcChat.Services;
 
-public class ChatService : Chat.ChatBase
+public class ChatServerService : Chat.ChatBase
 {
-    private readonly ISessionHandler _sessionHandler;
-    private readonly string _username;
+    private string _username;
+    private int isSessionActiveValue;
 
-    public ChatService(ISessionHandler sessionHandler, ServerConfig serverConfig)
+    public bool IsSessionActive
     {
-        _sessionHandler = sessionHandler;
+        get => Interlocked.CompareExchange(ref isSessionActiveValue, 1, 1) == 1;
+        private set
+        {
+            if (value)
+            {
+                Interlocked.CompareExchange(ref isSessionActiveValue, 1, 0);
+            }
+            else
+            {
+                Interlocked.CompareExchange(ref isSessionActiveValue, 0, 1);
+            }
+        }
+    }
+
+    public ChatServerService(ServerConfig serverConfig)
+    {
         _username = serverConfig.Username;
+        isSessionActiveValue = 0;
     }
 
     public override async Task SendMessage(
@@ -21,28 +35,29 @@ public class ChatService : Chat.ChatBase
             IServerStreamWriter<ChatMessage> responseStream,
             ServerCallContext context)
     {
-        if (_sessionHandler.IsSessionActive)
+        if (IsSessionActive)
         {
             await responseStream.WriteAsync(new ChatMessage { Name = _username, Text = "Server has active session" });
             context.Status = Status.DefaultCancelled;
             return;
         }
 
-        _sessionHandler.StartSession();
+        IsSessionActive = true;
+        Console.WriteLine("Client connected, messages are ready to be accepted in console.");
 
         var clientTask = HandleClientMessage(requestStream, context);
         var serverTask = HandleServerMessage(responseStream, context);
 
         await Task.WhenAll(clientTask, serverTask);
 
-        _sessionHandler.StopSession();
+        IsSessionActive = false;
 
         Console.WriteLine("Session is closed");
     }
 
     private async Task HandleServerMessage(IServerStreamWriter<ChatMessage> responseStream, ServerCallContext context)
     {
-        while (!context.CancellationToken.IsCancellationRequested)
+        while (!context.CancellationToken.IsCancellationRequested && IsSessionActive)
         {
             await responseStream.WriteAsync(new ChatMessage
             {
