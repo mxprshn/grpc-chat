@@ -2,9 +2,9 @@ name: grpc-chat
 
 on:
   push:
-    branches: [ main, 'feature/**' ]
-  pull_request_target:
     branches: [ main ]
+  pull_request:
+    branches: [ 'feature/**' ]
 
 jobs:
   build:
